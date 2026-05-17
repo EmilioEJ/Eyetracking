@@ -1,0 +1,8 @@
+opencv-python
+mediapipe==0.10.11
+pygame
+numpy
+pandas
+scikit-learn
+matplotlib
+jupyter

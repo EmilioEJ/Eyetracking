@@ -1,0 +1,17 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+bin/
+lib/
+include/
+
+# Carpetas de guardado de datos
+fixation_data/
+Gaze_Images/
+
+# Caché de Python
+__pycache__/
+*.pyc
+
