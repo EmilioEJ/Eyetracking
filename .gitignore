@@ -15,3 +15,9 @@ Gaze_Images/
 __pycache__/
 *.pyc
 
+
+# Datos de GazeScope
+sessions/
+profiles/
+data/
+.pytest_cache/

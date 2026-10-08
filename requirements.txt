@@ -1,8 +1,14 @@
+# Visión / seguimiento
 opencv-python
 mediapipe==0.10.11
-pygame
 numpy
-pandas
 scikit-learn
-matplotlib
-jupyter
+pandas
+
+# Aplicación de escritorio
+PySide6
+mss
+pynput
+
+# Desarrollo
+pytest

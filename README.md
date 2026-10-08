@@ -1,80 +1,100 @@
-# Eyetracking Project
+# GazeScope — eye tracking con webcam
 
-Un avanzado sistema de seguimiento ocular (Eye-Tracking) y predicción utilizando visión artificial. Este proyecto utiliza tu cámara web para calibrar tu mirada, rastrear a dónde estás mirando en la pantalla y generar un mapa de calor en tiempo real junto con los datos de fijación.
+GazeScope convierte una webcam normal en un **seguidor ocular de escritorio**, al estilo de Tobii. Calibras tu mirada una vez y la app se queda en segundo plano: una **burbuja transparente** muestra dónde miras sobre cualquier programa, y al grabar guarda la mirada junto con **capturas de lo que había en pantalla**. Así puedes ver sobre la página web real qué zonas llamaron más la atención.
 
-## Requisitos Previos
+## Qué incluye
 
-- **Python 3.10 o 3.11:** Es *muy importante* usar alguna de estas versiones. Versiones más recientes (como Python 3.12+) actualmente tienen problemas de compatibilidad con la librería `mediapipe` utilizada en este proyecto.
-- Una cámara web conectada y funcional.
+- **Seguimiento robusto a la cabeza**: mide el iris *dentro* de cada ojo (respecto a esquinas y párpados) y añade la pose de la cabeza (`solvePnP`). La versión anterior usaba la posición absoluta del iris y fallaba en cuanto movías la cabeza.
+- **Calibración guiada**: una guía de posición con la cámara, 13 puntos animados y 5 de **validación** que miden la precisión real en grados y píxeles. Se descartan parpadeos y valores atípicos.
+- **Perfiles**: guarda la calibración por persona y reutilízala. La **corrección de deriva** (`Ctrl+Alt+D`) reajusta el perfil mirando un punto durante un segundo, sin recalibrar.
+- **Filtro One Euro**: la burbuja se mantiene estable al fijar la vista y sigue rápido los saltos.
+- **Overlay click-through** sobre el monitor elegido. Muestra la burbuja de mirada y, si quieres, un mapa de calor en vivo; no interfiere con el ratón ni con el teclado.
+- **Grabación en segundo plano**: guarda capturas cuando cambia la pantalla (scroll, otra página, otra ventana) y el título de la ventana activa en cada escena, por ejemplo «Mi página – Google Chrome».
+- **Fijaciones reales** con el algoritmo I-VT: duración, posición, fusión de fijaciones cercanas y descarte de las demasiado cortas.
+- **Visor de sesiones** con cuatro modos: **Calor**, **Recorrido** (fijaciones numeradas), **Niebla** (solo se ve lo que se miró) y **Replay** animado.
+- **Áreas de interés (AOI)**: dibuja rectángulos sobre la escena y obtén el tiempo hasta la primera fijación, la permanencia, el número de fijaciones, las revisitas y el % de atención.
+- **Exportación**: reporte HTML autocontenido para compartir, PNG de cada escena y datos en CSV y JSON.
 
-## Instalación y Configuración
+## Requisitos
 
-Sigue estos pasos para clonar el repositorio, configurar un entorno virtual seguro y ejecutar el programa en tu máquina local.
+- **Python 3.10 u 3.11.** MediaPipe 0.10.11 no es compatible con 3.12 o superior.
+- Webcam y, en Linux, una sesión **X11**. El overlay y los atajos globales no funcionan en Wayland.
+- En Linux, Qt necesita una librería del sistema:
+  ```bash
+  sudo apt install libxcb-cursor0
+  ```
 
-### 1. Clonar el repositorio
-Abre tu terminal y clona el repositorio en tu máquina:
-```bash
-git clone <URL_DEL_REPOSITORIO>
-cd "Eyetracking proyecto"
-```
-*(Sustituye `<URL_DEL_REPOSITORIO>` por el enlace de tu repositorio de Git).*
+## Instalación
 
-### 2. Crear un Entorno Virtual
-Se recomienda encarecidamente utilizar un entorno virtual para instalar las dependencias y evitar conflictos con otras librerías de tu sistema.
-Asegúrate de tener instalada la herramienta venv para tu versión de Python (ej. `sudo apt install python3.11-venv` en sistemas basados en Debian/Ubuntu).
-
-Crea el entorno virtual usando Python 3.11 (o 3.10):
 ```bash
 python3.11 -m venv venv
-```
-
-### 3. Activar el Entorno Virtual
-Antes de instalar las dependencias o correr el programa, debes activar el entorno:
-- **En Linux/macOS:**
-  ```bash
-  source venv/bin/activate
-  ```
-- **En Windows (Símbolo del sistema / PowerShell):**
-  ```cmd
-  venv\Scripts\activate
-  ```
-*(Sabrás que está activado porque aparecerá `(venv)` al inicio de la línea en tu terminal).*
-
-### 4. Instalar las Dependencias
-Con el entorno activado, instala todas las librerías necesarias ejecutando:
-```bash
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
+## Uso
 
-## Ejecución del Programa
-
-Para iniciar el programa, asegúrate de que tu entorno virtual sigue activado y ejecuta:
 ```bash
-python3 eyetracker.py
+python -m gazescope                  # webcam
+python -m gazescope --source mouse   # sin cámara: el cursor hace de "mirada" (para probar)
+python -m gazescope --monitor 1      # rastrear otro monitor
+python -m gazescope --hidden         # arrancar minimizado en la bandeja
 ```
 
-### Proceso de Calibración
-1. Al iniciar, verás una **pantalla de bienvenida**. Presiona la **barra espaciadora** para comenzar.
-2. Mantén la cabeza quieta y la mirada fija en el **punto verde** que aparecerá en pantalla.
-3. Alrededor del punto verás un anillo blanco que indica el progreso (tarda unos 3 segundos por punto).
-4. El punto verde se moverá a través de 9 posiciones distintas. Síguelo únicamente con la mirada.
+1. **Inicio**: comprueba que los indicadores de cara, distancia, centrado y luz estén en verde.
+2. **Calibración**: escribe un nombre de perfil y pulsa *Iniciar calibración*. Sigue el punto solo con los ojos. Al terminar verás la precisión; guárdala si es *Buena* o *Excelente*.
+3. **Grabar**: pulsa *Iniciar grabación* o `Ctrl+Alt+R` desde cualquier app y navega con normalidad. Vuelve a pulsar para detener.
+4. **Sesiones**: abre la sesión, recorre las escenas, cambia de modo, dibuja AOIs y exporta el reporte.
 
-### Uso y Mapa de Calor (Heatmap)
-Una vez finalizada la calibración, entrarás en el modo de seguimiento y se mostrará un mapa de calor que registrará en tiempo real las zonas de la pantalla que más miras.
+¿Aún no tienes datos? En **Sesiones → Crear sesión de ejemplo** se genera una página web simulada con una mirada en patrón F.
 
-**Controles interactivos:**
-- **[R]**: Recalibrar (volverá a mostrar los puntos verdes).
-- **[C]**: Limpiar el mapa de calor acumulado actualmente.
-- **[S]**: **Guardar y Salir.**
-- **[ESC]**: Salir sin guardar los datos recientes.
+Si cierras la ventana, la app sigue en la bandeja del sistema. Para cerrarla del todo, usa *Salir* en el menú de la bandeja.
 
----
+### Atajos globales
 
-## Archivos Generados (Datos de Salida)
+| Atajo | Acción |
+|---|---|
+| `Ctrl+Alt+R` | Iniciar / detener grabación |
+| `Ctrl+Alt+B` | Mostrar / ocultar burbuja |
+| `Ctrl+Alt+H` | Mapa de calor en vivo |
+| `Ctrl+Alt+D` | Corrección de deriva |
 
-Al presionar la tecla **[S]** para salir de la aplicación, el programa generará dos carpetas automáticamente (si no existen) y guardará la sesión actual usando la fecha y hora:
+## Datos generados
 
-- **Carpeta `Gaze_Images/`**: Guarda una imagen en formato PNG del mapa de calor final (Ejemplo: `heatmap_2026-05-17_16-15-30.png`).
-- **Carpeta `fixation_data/`**: Guarda un archivo CSV con las coordenadas (X, Y) y el tiempo acumulado de fijación de la mirada (Ejemplo: `fixation_data_2026-05-17_16-15-30.csv`).
+```
+sessions/2026-10-07_18-30-12/
+├── meta.json        # monitor, px/grado, perfil y precisión, duración, conteos
+├── gaze.csv         # t, x, y, valid, scene_id  (todas las muestras, ~30 Hz)
+├── fixations.csv    # start, end, duration, x, y, n, scene_id
+├── scenes.json      # id, captura, intervalo de tiempo y título de ventana
+├── aois.json        # áreas de interés dibujadas en el visor
+├── screens/         # scene_000.jpg, scene_001.jpg, …
+├── thumb.jpg
+└── report.html      # al exportar
+profiles/<nombre>.json   # modelo de calibración + resultado de la validación
+data/settings.json       # ajustes
+```
+
+Las coordenadas están en píxeles **relativas al monitor rastreado**.
+
+## Precisión: qué esperar
+
+Una webcam no es un eye tracker infrarrojo. Con buena luz frontal, la cabeza estable y a unos 60 cm de la pantalla, el error típico es de **1,5 a 4°** (unos 60 a 160 px en un monitor de 24″ a 1080p). Basta para saber qué bloque de una página atrae la mirada (titular, imagen, botón), pero no qué palabra se lee. Por eso el kernel del mapa de calor se ajusta al error medido en la validación. Si la precisión empeora durante la sesión, usa la corrección de deriva.
+
+## Estructura del código
+
+```
+gazescope/
+├── core/       # visión y análisis (sin dependencias de UI salvo las fuentes Qt)
+│   ├── features.py, head_pose.py   # landmarks → características
+│   ├── calibration.py              # modelo ridge polinómico, validación, perfiles
+│   ├── filters.py, fixations.py    # One Euro, I-VT
+│   ├── heatmap.py                  # calor, scanpath, niebla
+│   ├── sources.py                  # webcam (hilo) / ratón + motor de mirada
+│   ├── recorder.py, session.py     # grabación, métricas, AOIs
+│   └── report.py, demo.py
+└── ui/         # PySide6: dashboard, overlay, calibración, tema
+legacy/eyetracker.py   # versión original en Pygame, como referencia
+```
+
+Tests: `python -m pytest tests`
